@@ -24,13 +24,15 @@ object repository {
     def update(id: TodoID, action: UpdateTodoItem): F[Option[TodoItem]]
   }
 
-  def inMemoryRepo[F[_]: Sync](): F[TodoRepository[F]] = for {
-    db <- Ref.of(Map[TodoID, TodoItem]())
-    counter <- Ref.of(0L)
-    repo = new InMemoryRepo(db, counter)
-  } yield repo
+  def inMemoryRepo[F[_]: Sync](): F[TodoRepository[F]] =
+    for {
+      db      <- Ref.of(Map[TodoID, TodoItem]())
+      counter <- Ref.of(0L)
+      repo = new InMemoryRepo(db, counter)
+    } yield repo
 
-  private class InMemoryRepo[F[_]: Monad](db: Ref[F, Map[TodoID, TodoItem]], counter: Ref[F, Long]) extends TodoRepository[F] {
+  private class InMemoryRepo[F[_]: Monad](db: Ref[F, Map[TodoID, TodoItem]], counter: Ref[F, Long])
+      extends TodoRepository[F] {
 
     override def getAll(): F[List[TodoItem]] = db.get.map(_.values.toList)
 
@@ -40,18 +42,20 @@ object repository {
 
     override def deleteAll(): F[Unit] = db.update(_.empty)
 
-    override def create(action: CreateTodoItem): F[TodoItem] = for {
-      newId <- counter.modify(x => (x + 1, x + 1)).map(TodoID(_))
-      newTodoItem = action.todoItem(newId)
-      _ <- db.update(_ + (newId -> newTodoItem))
-    } yield newTodoItem
+    override def create(action: CreateTodoItem): F[TodoItem] =
+      for {
+        newId <- counter.modify(x => (x + 1, x + 1)).map(TodoID(_))
+        newTodoItem = action.todoItem(newId)
+        _ <- db.update(_ + (newId -> newTodoItem))
+      } yield newTodoItem
 
-    override def update(id: TodoID, action: UpdateTodoItem): F[Option[TodoItem]] = for {
-      oldValue <- getById(id)
-      result   <- oldValue.fold(Monad[F].pure[Option[TodoItem]](None)) { x =>
-        val newValue = action.todoItem(x)
-        db.update(_ + (id -> newValue)) *> Monad[F].pure(Some(newValue))
-      }
-    } yield result
+    override def update(id: TodoID, action: UpdateTodoItem): F[Option[TodoItem]] =
+      for {
+        oldValue <- getById(id)
+        result <- oldValue.fold(Monad[F].pure[Option[TodoItem]](None)) { x =>
+          val newValue = action.todoItem(x)
+          db.update(_ + (id -> newValue)) *> Monad[F].pure(Some(newValue))
+        }
+      } yield result
   }
 }

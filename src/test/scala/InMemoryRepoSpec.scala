@@ -1,4 +1,3 @@
-
 import org.scalatest._
 import bertuol.todobackend.repository._
 import bertuol.todobackend.domain._
@@ -9,9 +8,9 @@ class InMemoryRepoSpec extends FlatSpec with Matchers {
 
   "The repository" should "get none if empty" in {
     val task = for {
-      repo <- inMemoryRepo[IO]()
+      repo   <- inMemoryRepo[IO]()
       getAll <- repo.getAll()
-      get <- repo.getById(TodoID(0L))
+      get    <- repo.getById(TodoID(0L))
     } yield getAll -> get
 
     val (getAll, get) = task.unsafeRunSync()
@@ -22,8 +21,8 @@ class InMemoryRepoSpec extends FlatSpec with Matchers {
 
   it should "get an item" in {
     val task = for {
-      repo <- inMemoryRepo[IO]()
-      newItem <- repo.create(CreateTodoItem("Foo"))
+      repo     <- inMemoryRepo[IO]()
+      newItem  <- repo.create(CreateTodoItem("Foo"))
       readBack <- repo.getById(newItem.id)
     } yield newItem -> readBack
 
@@ -37,8 +36,8 @@ class InMemoryRepoSpec extends FlatSpec with Matchers {
 
     val task = for {
       repo <- inMemoryRepo[IO]()
-      _ <- titles.traverse(title => repo.create(CreateTodoItem(title)))
-      all <- repo.getAll()
+      _    <- titles.traverse(title => repo.create(CreateTodoItem(title)))
+      all  <- repo.getAll()
     } yield all
 
     val allItems = task.unsafeRunSync()
@@ -48,9 +47,9 @@ class InMemoryRepoSpec extends FlatSpec with Matchers {
 
   it should "delete an item" in {
     val task = for {
-      repo <- inMemoryRepo[IO]()
-      newItem <- repo.create(CreateTodoItem("Foo"))
-      _ <- repo.delete(newItem.id)
+      repo     <- inMemoryRepo[IO]()
+      newItem  <- repo.create(CreateTodoItem("Foo"))
+      _        <- repo.delete(newItem.id)
       readBack <- repo.getById(newItem.id)
     } yield readBack
 
@@ -61,9 +60,9 @@ class InMemoryRepoSpec extends FlatSpec with Matchers {
 
   it should "delete all items" in {
     val task = for {
-      repo <- inMemoryRepo[IO]()
-      _ <- repo.create(CreateTodoItem("Foo"))
-      _ <- repo.deleteAll()
+      repo   <- inMemoryRepo[IO]()
+      _      <- repo.create(CreateTodoItem("Foo"))
+      _      <- repo.deleteAll()
       getAll <- repo.getAll()
     } yield getAll
 
@@ -74,9 +73,9 @@ class InMemoryRepoSpec extends FlatSpec with Matchers {
 
   it should "update an item" in {
     val task = for {
-      repo <- inMemoryRepo[IO]()
-      item <- repo.create(CreateTodoItem("foo"))
-      updated <- repo.update(item.id, UpdateTodoItem(Some("bar"), Some(true), Some(1)))
+      repo     <- inMemoryRepo[IO]()
+      item     <- repo.create(CreateTodoItem("foo"))
+      updated  <- repo.update(item.id, UpdateTodoItem(Some("bar"), Some(true), Some(1)))
       readBack <- repo.getById(item.id)
     } yield readBack
 
