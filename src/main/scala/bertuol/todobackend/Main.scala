@@ -2,31 +2,31 @@ package bertuol.todobackend
 
 import cats.effect.IO
 import cats.effect.Sync
-import cats.effect.concurrent.Ref
+import cats.implicits._
 import cats.Monad
 import cats.effect.IOApp
 import cats.effect.ExitCode
+import org.http4s.server.blaze.BlazeServerBuilder
 
 object Main extends IOApp {
-  import domain._
   import repository._
-  import service._
 
   override def run(args: List[String]): IO[ExitCode] = {
     for {
-      repo     <- inMemoryRepo[IO]()
-      exitCode <- runProgram(repo)
+      repo <- inMemoryRepo[IO]()
+      service = new Service(repo)
+      exitCode <- runProgram(service)
     } yield exitCode
   }
 
-  def runProgram(implicit repo: TodoRepository[IO]): IO[ExitCode] = {
-    for {
-      foo        <- createNewTodo[IO]("foo")
-      bar        <- createNewTodo[IO]("bar")
-      _          <- IO { println(foo) }
-      _          <- IO { println(bar) }
-      updatedBar <- updateOrder[IO](bar.id, 1)
-      _          <- IO { updatedBar.foreach(println) }
-    } yield ExitCode.Success
+  def runProgram(implicit service: Service[IO]): IO[ExitCode] = {
+    val httpApp = APIWebServer[IO].app
+    BlazeServerBuilder[IO]
+      .bindHttp(8080, "localhost")
+      .withHttpApp(httpApp)
+      .serve
+      .compile
+      .drain
+      .as(ExitCode.Success)
   }
 }

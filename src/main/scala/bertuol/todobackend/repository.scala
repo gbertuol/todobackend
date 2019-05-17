@@ -31,8 +31,7 @@ object repository {
       repo = new InMemoryRepo(db, counter)
     } yield repo
 
-  private class InMemoryRepo[F[_]: Monad](db: Ref[F, Map[TodoID, TodoItem]], counter: Ref[F, Long])
-      extends TodoRepository[F] {
+  private class InMemoryRepo[F[_]: Monad](db: Ref[F, Map[TodoID, TodoItem]], counter: Ref[F, Long]) extends TodoRepository[F] {
 
     override def getAll(): F[List[TodoItem]] = db.get.map(_.values.toList)
 

@@ -1,5 +1,7 @@
 package bertuol.todobackend
+
 import cats.MonadError
+import cats.Monad
 
 object domain {
 
@@ -33,9 +35,21 @@ object domain {
   def newTodoAction[F[_]](title: String)(implicit M: MonadError[F, Throwable]): F[CreateTodoItem] =
     M.pure(CreateTodoItem(title))
 
-  def updateTodoOrderAction[F[_]](
-      newOrder: Int
-  )(implicit M: MonadError[F, Throwable]): F[UpdateTodoItem] =
-    M.pure(UpdateTodoItem(title = None, completed = None, order = Some(newOrder)))
+  def updateTodoOrderAction[F[_]](newOrder: Int)(implicit M: MonadError[F, Throwable]): F[UpdateTodoItem] =
+    if (newOrder < 0) {
+      M.raiseError(new IllegalArgumentException(s"a todo order must not be a negative number: $newOrder"))
+    } else {
+      M.pure(UpdateTodoItem(title = None, completed = None, order = Some(newOrder)))
+    }
+
+  def updateTodoTitleAction[F[_]](newTitle: String)(implicit M: MonadError[F, Throwable]): F[UpdateTodoItem] =
+    if (newTitle.size > 20) {
+      M.raiseError(new IllegalArgumentException(s"the length of a todo title must not be greater than 20"))
+    } else {
+      M.pure(UpdateTodoItem(title = Some(newTitle), completed = None, order = None))
+    }
+
+  def updateTodoCompletedAction[F[_]: Monad](completed: Boolean): F[UpdateTodoItem] =
+    Monad[F].pure(UpdateTodoItem(title = None, completed = Some(completed), order = None))
 
 }

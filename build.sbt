@@ -7,9 +7,16 @@ lazy val root = project
       scalaVersion := "2.12.8"
   )
 
+val Http4sVersion = "0.20.0"
+
 libraryDependencies ++= Seq(
-    "org.scalatest" %% "scalatest" % "3.0.5" % Test,
-    "org.typelevel" %% "cats-effect" % "1.3.0" withSources() withJavadoc()
+    "org.scalatest" %% "scalatest"           % "3.0.5" % Test,
+    "org.typelevel" %% "cats-effect"         % "1.3.0",
+    "org.http4s"    %% "http4s-blaze-server" % Http4sVersion,
+    "org.http4s"    %% "http4s-blaze-client" % Http4sVersion,
+    "org.http4s"    %% "http4s-circe"        % Http4sVersion,
+    "org.http4s"    %% "http4s-dsl"          % Http4sVersion,
+    "io.circe"      %% "circe-generic"       % "0.11.1"
 )
 
 scalacOptions in Compile in console := Seq(
