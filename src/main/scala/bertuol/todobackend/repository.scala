@@ -24,6 +24,10 @@ object repository {
     def update(id: TodoID, action: UpdateTodoItem): F[Option[TodoItem]]
   }
 
+  object TodoRepository {
+    def apply[F[_]: TodoRepository]: TodoRepository[F] = implicitly
+  }
+
   def inMemoryRepo[F[_]: Sync](): F[TodoRepository[F]] =
     for {
       db      <- Ref.of(Map[TodoID, TodoItem]())

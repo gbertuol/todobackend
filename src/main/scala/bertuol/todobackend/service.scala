@@ -4,57 +4,57 @@ import bertuol.todobackend.repository.TodoRepository
 import cats.effect.Effect
 import cats.implicits._
 
-class Service[F[_]: Effect](repo: TodoRepository[F]) {
+class Service[F[_]: Effect: TodoRepository] {
   import domain._
 
   def createNewTodo(title: String): F[TodoItem] =
     for {
-      action <- newTodoAction[F](title)
-      todo   <- repo.create(action)
+      action <- CreateTodoItem[F](title)
+      todo   <- TodoRepository[F].create(action)
     } yield todo
 
   def updateOrder(id: TodoID, newOrder: Int): F[Option[TodoItem]] =
     for {
-      action <- updateTodoOrderAction[F](newOrder)
-      todo   <- repo.update(id, action)
+      action <- UpdateTodoItem.updateOrder[F](newOrder)
+      todo   <- TodoRepository[F].update(id, action)
     } yield todo
 
   def updateOrder(id: String, newOrder: Int): F[Option[TodoItem]] =
     for {
-      _id  <- todoId[F](id)
+      _id  <- TodoID[F](id)
       todo <- updateOrder(_id, newOrder)
     } yield todo
 
   def updateTitle(id: String, newTitle: String): F[Option[TodoItem]] =
     for {
-      _id    <- todoId[F](id)
-      action <- updateTodoTitleAction[F](newTitle)
-      todo   <- repo.update(_id, action)
+      _id    <- TodoID[F](id)
+      action <- UpdateTodoItem.updateTitle[F](newTitle)
+      todo   <- TodoRepository[F].update(_id, action)
     } yield todo
 
   def updateCompleted(id: String, completed: Boolean): F[Option[TodoItem]] =
     for {
-      _id    <- todoId[F](id)
-      action <- updateTodoCompletedAction[F](completed)
-      todo   <- repo.update(_id, action)
+      _id    <- TodoID[F](id)
+      action <- UpdateTodoItem.updateCompleted[F](completed)
+      todo   <- TodoRepository[F].update(_id, action)
     } yield todo
 
   def getTodoById(id: String): F[Option[TodoItem]] =
     for {
-      _id  <- todoId[F](id)
-      todo <- repo.getById(_id)
+      _id  <- TodoID[F](id)
+      todo <- TodoRepository[F].getById(_id)
     } yield todo
 
   def getAllTodos(): F[List[TodoItem]] =
-    repo.getAll()
+    TodoRepository[F].getAll()
 
   def deleteTodo(id: String): F[Unit] =
     for {
-      _id <- todoId[F](id)
-      _   <- repo.delete(_id)
+      _id <- TodoID[F](id)
+      _   <- TodoRepository[F].delete(_id)
     } yield ()
 
   def deleteAllTodos(): F[Unit] =
-    repo.deleteAll()
+    TodoRepository[F].deleteAll()
 
 }
