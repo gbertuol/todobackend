@@ -8,16 +8,22 @@ import cats.effect.IOApp
 import cats.effect.ExitCode
 import org.http4s.server.blaze.BlazeServerBuilder
 import cats.effect.Effect
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import io.chrisdavenport.log4cats.Logger
 
 object Main extends IOApp {
   import repository._
 
   override def run(args: List[String]): IO[ExitCode] = {
     for {
-      repo     <- inMemoryRepo[IO]()
+      logger <- Slf4jLogger.create[IO]
+      // repo     <- inMemoryRepo[IO]()
+      repo     <- createRepo(logger)
       exitCode <- runProgram(repo)
     } yield exitCode
   }
+
+  def createRepo(implicit logger: Logger[IO]): IO[TodoRepository[IO]] = bootstrapRepo[IO]()
 
   def runProgram(implicit repo: TodoRepository[IO]): IO[ExitCode] = {
     implicit val service = new Service[IO]

@@ -12,11 +12,15 @@ val Http4sVersion = "0.20.0"
 libraryDependencies ++= Seq(
     "org.scalatest" %% "scalatest"           % "3.0.5" % Test,
     "org.typelevel" %% "cats-effect"         % "1.3.0",
+    "io.chrisdavenport" %% "log4cats-slf4j" % "0.3.0",
+    "org.apache.logging.log4j" % "log4j-api" % "2.12.0",
+    "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.12.0",
     "org.http4s"    %% "http4s-blaze-server" % Http4sVersion,
     "org.http4s"    %% "http4s-blaze-client" % Http4sVersion,
     "org.http4s"    %% "http4s-circe"        % Http4sVersion,
     "org.http4s"    %% "http4s-dsl"          % Http4sVersion,
-    "io.circe"      %% "circe-generic"       % "0.11.1"
+    "io.circe"      %% "circe-generic"       % "0.11.1",
+    "software.amazon.awssdk" % "dynamodb" % "2.5.64"
 )
 
 scalacOptions in Compile in console := Seq(

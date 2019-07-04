@@ -4,13 +4,13 @@ import bertuol.todobackend.domain._
 import cats.effect.IO
 import cats.implicits._
 
-class InMemoryRepoSpec extends FlatSpec with Matchers {
+class InMemoryRepoSpec extends FlatSpec with Matchers with Inside {
 
   "The repository" should "get none if empty" in {
     val task = for {
       repo   <- inMemoryRepo[IO]()
       getAll <- repo.getAll()
-      get    <- repo.getById(TodoID(0L))
+      get    <- repo.getById(TodoID("0"))
     } yield getAll -> get
 
     val (getAll, get) = task.unsafeRunSync()
@@ -73,14 +73,17 @@ class InMemoryRepoSpec extends FlatSpec with Matchers {
 
   it should "update an item" in {
     val task = for {
-      repo     <- inMemoryRepo[IO]()
-      item     <- repo.create(CreateTodoItem("foo"))
-      updated  <- repo.update(item.id, UpdateTodoItem(Some("bar"), Some(true), Some(1)))
-      readBack <- repo.getById(item.id)
-    } yield readBack
+      repo    <- inMemoryRepo[IO]()
+      item    <- repo.create(CreateTodoItem("foo"))
+      updated <- repo.update(item.id, UpdateTodoItem(Some("bar"), Some(true), Some(1)))
+    } yield item -> updated
 
-    val item = task.unsafeRunSync()
+    val (item, updated) = task.unsafeRunSync()
 
-    item shouldBe Some(TodoItem(TodoID(1), TodoBody("bar", true, 1)))
+    inside(updated) {
+      case Some(ii) =>
+        ii.id shouldBe item.id
+        ii.item shouldBe TodoBody("bar", true, 1)
+    }
   }
 }

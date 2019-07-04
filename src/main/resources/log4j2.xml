@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="warn" name="todobackend" packages="">
+  <Appenders>
+    <Console name="STDOUT" target="SYSTEM_OUT">
+      <PatternLayout pattern="%d{dd MMM yyyy HH:mm:ss,SSS} %highlight{[%p]} (%t) %c: %m%n"/>
+    </Console>
+  </Appenders>
+  <Loggers>
+    <Root level="DEBUG">
+      <AppenderRef ref="STDOUT"/>
+    </Root>
+
+    <Logger name="io.netty" level="WARN"/>
+    <Logger name="org.http4s" level="WARN"/>
+    <Logger name="software.amazon" level="WARN"/>
+
+  </Loggers>
+</Configuration>

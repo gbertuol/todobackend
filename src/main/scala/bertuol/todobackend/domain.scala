@@ -2,10 +2,12 @@ package bertuol.todobackend
 
 import cats.MonadError
 import cats.Monad
+import java.{util => ju}
+import cats.effect.Sync
 
 object domain {
 
-  final case class TodoID(value: Long) extends AnyVal
+  final case class TodoID(value: String) extends AnyVal
   final case class TodoBody(title: String, completed: Boolean, order: Int)
   final case class TodoItem(id: TodoID, item: TodoBody)
 
@@ -24,11 +26,11 @@ object domain {
   }
 
   object TodoID {
-    def apply[F[_]](value: String)(implicit M: MonadError[F, Throwable]): F[TodoID] =
-      M.catchNonFatal {
-        val _id = value.toLong
-        TodoID(_id)
-      }
+    import cats.syntax.functor._
+
+    def pure[F[_]: Monad](_id: String): F[TodoID] = Monad[F].pure(TodoID(_id))
+
+    def random[F[_]: Sync]: F[TodoID] = Sync[F].delay(ju.UUID.randomUUID.toString).map(TodoID(_))
   }
 
   object CreateTodoItem {
