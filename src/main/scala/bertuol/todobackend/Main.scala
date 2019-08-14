@@ -6,15 +6,10 @@ import cats.implicits._
 import cats.Monad
 import cats.effect.IOApp
 import cats.effect.ExitCode
+import org.http4s.server.blaze.BlazeServerBuilder
 import cats.effect.Effect
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.chrisdavenport.log4cats.Logger
-import com.twitter.finagle.Http
-import io.finch.Endpoint
-import com.twitter.util.Await
-import cats.effect.Resource
-import com.twitter.util.Future
-import io.finch.internal.ToAsync
 
 object Main extends IOApp {
   import repository._
@@ -22,20 +17,23 @@ object Main extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
     for {
       logger <- Slf4jLogger.create[IO]
-      repo   <- createRepo(logger)
-      status <- runProgram(repo)
-    } yield status
+      // repo     <- inMemoryRepo[IO]()
+      repo     <- createRepo(logger)
+      exitCode <- runProgram(repo)
+    } yield exitCode
   }
 
-  def createRepo(implicit logger: Logger[IO]): IO[TodoRepository[IO]] =
-    inMemoryRepo()
-  // bootstrapRepo[IO]()
+  def createRepo(implicit logger: Logger[IO]): IO[TodoRepository[IO]] = bootstrapRepo[IO]()
 
-  def runProgram(implicit repo: TodoRepository[IO]) = {
+  def runProgram(implicit repo: TodoRepository[IO]): IO[ExitCode] = {
     implicit val service = new Service[IO]
-    val app              = new APIWebServer[IO]()
-    val http             = IO(Http.serve(":8080", app.toService))
-    val server           = Resource.make(http)(s => IO.suspend(implicitly[ToAsync[Future, IO]].apply(s.close())))
-    server.use(_ => IO.never).as(ExitCode.Success)
+    val httpApp          = APIWebServer[IO].app
+    BlazeServerBuilder[IO]
+      .bindHttp(8080, "localhost")
+      .withHttpApp(httpApp)
+      .serve
+      .compile
+      .drain
+      .as(ExitCode.Success)
   }
 }

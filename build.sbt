@@ -15,8 +15,10 @@ libraryDependencies ++= Seq(
     "io.chrisdavenport" %% "log4cats-slf4j" % "0.3.0",
     "org.apache.logging.log4j" % "log4j-api" % "2.12.0",
     "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.12.0",
-    "com.github.finagle" %% "finchx-core" % "0.29.0",
-    "com.github.finagle" %% "finchx-circe" % "0.29.0",
+    "org.http4s"    %% "http4s-blaze-server" % Http4sVersion,
+    "org.http4s"    %% "http4s-blaze-client" % Http4sVersion,
+    "org.http4s"    %% "http4s-circe"        % Http4sVersion,
+    "org.http4s"    %% "http4s-dsl"          % Http4sVersion,
     "io.circe"      %% "circe-generic"       % "0.11.1",
     "software.amazon.awssdk" % "dynamodb" % "2.5.64"
 )

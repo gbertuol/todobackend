@@ -3,62 +3,99 @@ package bertuol.todobackend
 import cats.effect.Effect
 import cats.effect.ContextShift
 import cats.implicits._
-import io.finch._
-import io.finch.circe._
-import io.circe._
+import io.circe.syntax._
 import io.circe.generic.auto._
-import io.circe.generic.semiauto._
+import org.http4s._
+import org.http4s.circe._
+import org.http4s.dsl.Http4sDsl
+import org.http4s.server.Router
+import org.http4s.server.middleware.CORS
+import org.http4s.syntax.kleisli._
 
-class APIWebServer[F[_]: Effect: ContextShift](implicit service: Service[F]) extends Endpoint.Module[F] {
+class APIWebServer[F[_]](implicit eff: Effect[F], cs: ContextShift[F]) extends Http4sDsl[F] {
   import domain._
   import APIWebServer._
 
-  // implicit val errorResponseEncoder           = jsonEncoderOf[F, ErrorResponse]
-  implicit val todoEncoder                    = deriveEncoder[TodoItem]
-  implicit val createTodoFormDecoder          = deriveDecoder[CreateTodoForm]
-  implicit val updateTodoOrderFormDecoder     = deriveDecoder[UpdateTodoOrderForm]
-  implicit val updateTodoTitleFormDecoder     = deriveDecoder[UpdateTodoTitleForm]
-  implicit val updateTodoCompletedFormDecoder = deriveDecoder[UpdateTodoCompletedForm]
+  implicit val errorResponseEncoder           = jsonEncoderOf[F, ErrorResponse]
+  implicit val todoEncoder                    = jsonEncoderOf[F, TodoItem]
+  implicit val todoListEncoder                = jsonEncoderOf[F, List[TodoItem]]
+  implicit val createTodoFormDecoder          = jsonOf[F, CreateTodoForm]
+  implicit val updateTodoOrderFormDecoder     = jsonOf[F, UpdateTodoOrderForm]
+  implicit val updateTodoTitleFormDecoder     = jsonOf[F, UpdateTodoTitleForm]
+  implicit val updateTodoCompletedFormDecoder = jsonOf[F, UpdateTodoCompletedForm]
 
-  final val getAllTodos = get(pathEmpty) {
-    service.getAllTodos.map(Ok(_))
-  }
+  def app(implicit service: Service[F]): HttpApp[F]       = CORS(routes.orNotFound)
+  def routes(implicit service: Service[F]): HttpRoutes[F] = rootRoutes
 
-  final val getTodo = get("todo" :: path[String]) { todoId: String =>
-    service.getTodoById(todoId).map(_.map(Ok(_)).getOrElse(NoContent))
-  }
+  private def rootRoutes(implicit service: Service[F]): HttpRoutes[F] =
+    HttpRoutes.of[F] {
+      case GET -> Root =>
+        service.getAllTodos().attempt.flatMap {
+          case Left(ex) => BadRequest(ErrorResponse(ex.getMessage))
+          case Right(v) => Ok(v)
+        }
 
-  final val createTodo = post("todo" :: jsonBody[CreateTodoForm]) { form: CreateTodoForm =>
-    service.createNewTodo(form.title).map(Created(_))
-  }
+      case GET -> Root / todoId =>
+        service.getTodoById(todoId).attempt.flatMap {
+          case Left(ex)       => BadRequest(ErrorResponse(ex.getMessage))
+          case Right(Some(v)) => Ok(v)
+          case Right(None)    => NotFound()
+        }
 
-  final val patchTodoOrder = patch("todo" :: path[String] :: "order" :: jsonBody[UpdateTodoOrderForm]) { (todoId: String, form: UpdateTodoOrderForm) =>
-    service.updateOrder(todoId, form.order).map(_.map(Ok(_)).getOrElse(NoContent))
-  }
+      case req @ POST -> Root =>
+        for {
+          form <- req.as[CreateTodoForm]
+          resp <- service.createNewTodo(form.title).attempt.flatMap {
+            case Left(ex) => BadRequest(ErrorResponse(ex.getMessage))
+            case Right(v) => Created(v)
+          }
+        } yield resp
 
-  final val patchTodoTitle = patch("todo" :: path[String] :: "title" :: jsonBody[UpdateTodoTitleForm]) { (todoId: String, form: UpdateTodoTitleForm) =>
-    service.updateTitle(todoId, form.title).map(_.map(Ok(_)).getOrElse(NoContent))
-  }
+      case req @ PATCH -> Root / todoId / "order" =>
+        for {
+          form <- req.as[UpdateTodoOrderForm]
+          resp <- service.updateOrder(todoId, form.order).attempt.flatMap {
+            case Left(ex)       => BadRequest(ErrorResponse(ex.getMessage))
+            case Right(Some(v)) => Ok(v)
+            case Right(None)    => NotFound()
+          }
+        } yield resp
 
-  final val patchTodoCompleted = patch("todo" :: path[String] :: "completed" :: jsonBody[UpdateTodoCompletedForm]) { (todoId: String, form: UpdateTodoCompletedForm) =>
-    service.updateCompleted(todoId, form.completed).map(_.map(Ok(_)).getOrElse(NoContent))
-  }
+      case req @ PATCH -> Root / todoId / "title" =>
+        for {
+          form <- req.as[UpdateTodoTitleForm]
+          resp <- service.updateTitle(todoId, form.title).attempt.flatMap {
+            case Left(ex)       => BadRequest(ErrorResponse(ex.getMessage))
+            case Right(Some(v)) => Ok(v)
+            case Right(None)    => NotFound()
+          }
+        } yield resp
 
-  final val deleteTodo = delete("todo" :: path[String]) { (todoId: String) =>
-    service.deleteTodo(todoId).as(Accepted[Unit])
-  }
+      case req @ PATCH -> Root / todoId / "completed" =>
+        for {
+          form <- req.as[UpdateTodoCompletedForm]
+          resp <- service.updateCompleted(todoId, form.completed).attempt.flatMap {
+            case Left(ex)       => BadRequest(ErrorResponse(ex.getMessage))
+            case Right(Some(v)) => Ok(v)
+            case Right(None)    => NotFound()
+          }
+        } yield resp
 
-  final val deleteAllTodos = delete("todo" :: pathEmpty) {
-    service.deleteAllTodos().as(Accepted[Unit])
-  }
+      case DELETE -> Root / todoId =>
+        service.deleteTodo(todoId).attempt.flatMap {
+          case Left(ex) => BadRequest(ErrorResponse(ex.getMessage))
+          case Right(_) => Ok()
+        }
 
-  final def toService =
-    Bootstrap
-      .serve[Application.Json](getAllTodos :+: getTodo :+: createTodo :+: deleteAllTodos :+: deleteTodo :+: patchTodoOrder :+: patchTodoTitle :+: patchTodoCompleted)
-      .toService
+      case DELETE -> Root =>
+        service.deleteAllTodos() *> Ok()
+    }
+
 }
 
 object APIWebServer {
+
+  def apply[F[_]: Effect: ContextShift]: APIWebServer[F] = new APIWebServer[F]
 
   final case class ErrorResponse(message: Option[String] = None)
   object ErrorResponse {
