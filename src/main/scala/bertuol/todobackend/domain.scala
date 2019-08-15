@@ -28,9 +28,16 @@ object domain {
   object TodoID {
     import cats.syntax.functor._
 
-    def pure[F[_]: Monad](_id: String): F[TodoID] = Monad[F].pure(TodoID(_id))
+    val validId = """^([a-zA-Z0-9\-])+$""".r
 
-    def random[F[_]: Sync]: F[TodoID] = Sync[F].delay(ju.UUID.randomUUID.toString).map(TodoID(_))
+    def parse[F[_]: Sync](_id: String): F[TodoID] =
+      _id match {
+        case validId(_*) => Sync[F].pure(TodoID(_id))
+        case _ => Sync[F].raiseError(new IllegalArgumentException("Invalid todo id"))
+      }
+
+    def random[F[_]: Sync]: F[TodoID] =
+      Sync[F].delay(ju.UUID.randomUUID.toString).map(TodoID(_))
   }
 
   object CreateTodoItem {

@@ -35,14 +35,14 @@ class APIWebServer[F[_]](implicit eff: Effect[F], cs: ContextShift[F]) extends H
           case Right(v) => Ok(v)
         }
 
-      case GET -> Root / todoId =>
+      case GET -> Root / "todos" / todoId =>
         service.getTodoById(todoId).attempt.flatMap {
           case Left(ex)       => BadRequest(ErrorResponse(ex.getMessage))
           case Right(Some(v)) => Ok(v)
           case Right(None)    => NotFound()
         }
 
-      case req @ POST -> Root =>
+      case req @ POST -> Root / "todos" =>
         for {
           form <- req.as[CreateTodoForm]
           resp <- service.createNewTodo(form.title).attempt.flatMap {
@@ -57,7 +57,7 @@ class APIWebServer[F[_]](implicit eff: Effect[F], cs: ContextShift[F]) extends H
           resp <- service.updateOrder(todoId, form.order).attempt.flatMap {
             case Left(ex)       => BadRequest(ErrorResponse(ex.getMessage))
             case Right(Some(v)) => Ok(v)
-            case Right(None)    => NotFound()
+            case Right(None)    => NoContent()
           }
         } yield resp
 
@@ -67,7 +67,7 @@ class APIWebServer[F[_]](implicit eff: Effect[F], cs: ContextShift[F]) extends H
           resp <- service.updateTitle(todoId, form.title).attempt.flatMap {
             case Left(ex)       => BadRequest(ErrorResponse(ex.getMessage))
             case Right(Some(v)) => Ok(v)
-            case Right(None)    => NotFound()
+            case Right(None)    => NoContent()
           }
         } yield resp
 
@@ -77,7 +77,7 @@ class APIWebServer[F[_]](implicit eff: Effect[F], cs: ContextShift[F]) extends H
           resp <- service.updateCompleted(todoId, form.completed).attempt.flatMap {
             case Left(ex)       => BadRequest(ErrorResponse(ex.getMessage))
             case Right(Some(v)) => Ok(v)
-            case Right(None)    => NotFound()
+            case Right(None)    => NoContent()
           }
         } yield resp
 
