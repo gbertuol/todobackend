@@ -20,51 +20,73 @@ import org.http4s.implicits._
 
 class RoutesSpec extends FlatSpec with Matchers with Inside {
 
-  implicit val cs = IO.contextShift(ExecutionContext.global)
-  implicit val idDecoder = deriveDecoder[TodoID]
+  implicit val cs              = IO.contextShift(ExecutionContext.global)
+  implicit val idDecoder       = deriveDecoder[TodoID]
   implicit val todoBodyDecoder = deriveDecoder[TodoBody]
-  implicit val todoDecoder = deriveDecoder[TodoItem]
-  implicit val jsonTodo = jsonOf[IO, TodoItem]
+  implicit val todoDecoder     = deriveDecoder[TodoItem]
+  implicit val jsonTodo        = jsonOf[IO, TodoItem]
 
-  val api = new APIWebServer[IO]
+  val api  = new APIWebServer[IO]
   val _uri = uri"/todos"
 
-  "Get" should "get the todo" in runTest { service =>
+  "API" should "get the todo by id" in runTest { service =>
     for {
       todo <- service.createNewTodo("test")
-      response <- api.app(service).run(
-        Request(method = Method.GET, uri = _uri / todo.id.value)
-      )
+      request <- GET(_uri / todo.id.value)
+      response <- api.app(service).run(request)
       result <- response.as[TodoItem]
-      _ <- IO(result shouldBe todo)
+      _      <- IO(result shouldBe todo)
     } yield ()
   }
 
-  it should "fail if no todo" in runTest { service =>
+  it should "fail to get by id if no todo" in runTest { service =>
     for {
-      response <- api.app(service).run(
-        Request(method = Method.GET, uri = _uri / "foo")
-      )
+      request <- GET(_uri / "foo")
+      response <- api.app(service).run(request)
       _ <- IO { response.status shouldBe Status.NotFound }
     } yield ()
   }
 
-  it should "bad request if bad input" in runTest { service =>
+  it should "fail to get by id if bad input" in runTest { service =>
     for {
-      response <- api.app(service).run(
-        Request(method = Method.GET, uri = _uri / "f_f")
-      )
+      request <- GET(_uri / "f_f")
+      response <- api.app(service).run(request)
       _ <- IO { response.status shouldBe Status.BadRequest }
     } yield ()
   }
 
-  "Post" should "create a new todo" in runTest { service =>
-    // IO.unit
+  it should "create a new todo" in runTest { service =>
     for {
-      request <- POST(json"""{"title":"foo"}""", _uri)
+      request  <- POST(json"""{"title":" My Title Name 1223 "}""", _uri)
       response <- api.app(service).run(request)
-      result <- response.as[TodoItem]
-      _ <- IO(result.item.title shouldBe "foo")
+      result   <- response.as[TodoItem]
+      _        <- IO(result.item.title shouldBe " My Title Name 1223 ")
+    } yield ()
+  }
+
+  it should "create if invalid name" in runTest { service =>
+    for {
+      request  <- POST(json"""{"title":"f%o?"}""", _uri)
+      response <- api.app(service).run(request)
+      _        <- IO(response.status shouldBe Status.BadRequest)
+    } yield ()
+  }
+
+  it should "update the todo order" in runTest { service =>
+    for {
+      todo     <- service.createNewTodo("foo")
+      request  <- PATCH(json"""{"order":1}""", _uri / todo.id.value / "order")
+      response <- api.app(service).run(request)
+      result   <- response.as[TodoItem]
+      _        <- IO(result.item.order shouldBe 1)
+    } yield ()
+  }
+
+  it should "fail updating order of non-existing todo" in runTest { service =>
+    for {
+      request  <- PATCH(json"""{"order":1}""", _uri / "foo" / "order")
+      response <- api.app(service).run(request)
+      _        <- IO(response.status shouldBe Status.NotFound)
     } yield ()
   }
 
@@ -76,7 +98,6 @@ class RoutesSpec extends FlatSpec with Matchers with Inside {
     } yield ()
 
     test.unsafeRunSync()
-
   }
 
   def createService(implicit repo: TodoRepository[IO]): Service[IO] = new Service[IO]

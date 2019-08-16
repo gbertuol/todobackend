@@ -51,13 +51,13 @@ class APIWebServer[F[_]](implicit eff: Effect[F], cs: ContextShift[F]) extends H
           }
         } yield resp
 
-      case req @ PATCH -> Root / todoId / "order" =>
+      case req @ PATCH -> Root / "todos" / todoId / "order" =>
         for {
           form <- req.as[UpdateTodoOrderForm]
           resp <- service.updateOrder(todoId, form.order).attempt.flatMap {
             case Left(ex)       => BadRequest(ErrorResponse(ex.getMessage))
             case Right(Some(v)) => Ok(v)
-            case Right(None)    => NoContent()
+            case Right(None)    => NotFound()
           }
         } yield resp
 
@@ -102,7 +102,7 @@ object APIWebServer {
     def apply(message: String): ErrorResponse = ErrorResponse(Option(message))
   }
 
-  final case class CreateTodoForm(title: String, order: Option[Int])
+  final case class CreateTodoForm(title: String)
   final case class UpdateTodoOrderForm(order: Int)
   final case class UpdateTodoTitleForm(title: String)
   final case class UpdateTodoCompletedForm(completed: Boolean)

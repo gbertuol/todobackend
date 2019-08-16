@@ -28,12 +28,12 @@ object domain {
   object TodoID {
     import cats.syntax.functor._
 
-    val validId = """^([a-zA-Z0-9\-])+$""".r
+    val validId = """^([a-zA-Z0-9\-]+)$""".r
 
     def parse[F[_]: Sync](_id: String): F[TodoID] =
       _id match {
         case validId(_*) => Sync[F].pure(TodoID(_id))
-        case _ => Sync[F].raiseError(new IllegalArgumentException("Invalid todo id"))
+        case _           => Sync[F].raiseError(new IllegalArgumentException("Invalid todo id"))
       }
 
     def random[F[_]: Sync]: F[TodoID] =
@@ -41,8 +41,17 @@ object domain {
   }
 
   object CreateTodoItem {
+
+    val maxSize   = 120
+    val validName = """^([a-zA-Z0-9 ]+)$""".r
+
     def apply[F[_]](title: String)(implicit M: MonadError[F, Throwable]): F[CreateTodoItem] =
-      M.pure(CreateTodoItem(title))
+      if (title.size > maxSize) M.raiseError(new IllegalArgumentException("todo title too big"))
+      else
+        title match {
+          case validName(_*) => M.pure(CreateTodoItem(title))
+          case _             => M.raiseError(new IllegalArgumentException("Invalid todo title"))
+        }
   }
 
   object UpdateTodoItem {
