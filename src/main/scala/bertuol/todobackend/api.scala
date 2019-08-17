@@ -61,33 +61,33 @@ class APIWebServer[F[_]](implicit eff: Effect[F], cs: ContextShift[F]) extends H
           }
         } yield resp
 
-      case req @ PATCH -> Root / todoId / "title" =>
+      case req @ PATCH -> Root / "todos" / todoId / "title" =>
         for {
           form <- req.as[UpdateTodoTitleForm]
           resp <- service.updateTitle(todoId, form.title).attempt.flatMap {
             case Left(ex)       => BadRequest(ErrorResponse(ex.getMessage))
             case Right(Some(v)) => Ok(v)
-            case Right(None)    => NoContent()
+            case Right(None)    => NotFound()
           }
         } yield resp
 
-      case req @ PATCH -> Root / todoId / "completed" =>
+      case req @ PATCH -> Root / "todos" / todoId / "completed" =>
         for {
           form <- req.as[UpdateTodoCompletedForm]
           resp <- service.updateCompleted(todoId, form.completed).attempt.flatMap {
             case Left(ex)       => BadRequest(ErrorResponse(ex.getMessage))
             case Right(Some(v)) => Ok(v)
-            case Right(None)    => NoContent()
+            case Right(None)    => NotFound()
           }
         } yield resp
 
-      case DELETE -> Root / todoId =>
+      case DELETE -> Root / "todos" / todoId =>
         service.deleteTodo(todoId).attempt.flatMap {
           case Left(ex) => BadRequest(ErrorResponse(ex.getMessage))
           case Right(_) => Ok()
         }
 
-      case DELETE -> Root =>
+      case DELETE -> Root / "todos" =>
         service.deleteAllTodos() *> Ok()
     }
 

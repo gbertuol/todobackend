@@ -34,10 +34,13 @@ class Service[F[_]: Effect: TodoRepository] {
       todo   <- TodoRepository[F].update(_id, action)
     } yield todo
 
+  def getTodoById(id: TodoID): F[Option[TodoItem]] =
+    TodoRepository[F].getById(id)
+
   def getTodoById(id: String): F[Option[TodoItem]] =
     for {
       _id  <- TodoID.parse[F](id)
-      todo <- TodoRepository[F].getById(_id)
+      todo <- getTodoById(_id)
     } yield todo
 
   def getAllTodos(): F[List[TodoItem]] =

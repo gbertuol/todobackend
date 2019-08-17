@@ -4,10 +4,11 @@ import cats.MonadError
 import cats.Monad
 import java.{util => ju}
 import cats.effect.Sync
+import cats.syntax.functor._
 
 object domain {
 
-  final case class TodoID(value: String) extends AnyVal
+  final case class TodoID(value: String)
   final case class TodoBody(title: String, completed: Boolean, order: Int)
   final case class TodoItem(id: TodoID, item: TodoBody)
 
@@ -26,8 +27,6 @@ object domain {
   }
 
   object TodoID {
-    import cats.syntax.functor._
-
     val validId = """^([a-zA-Z0-9\-]+)$""".r
 
     def parse[F[_]: Sync](_id: String): F[TodoID] =
@@ -64,11 +63,7 @@ object domain {
       }
 
     def updateTitle[F[_]](newTitle: String)(implicit M: MonadError[F, Throwable]): F[UpdateTodoItem] =
-      if (newTitle.size > 20) {
-        M.raiseError(new IllegalArgumentException(s"the length of a todo title must not be greater than 20"))
-      } else {
-        M.pure(UpdateTodoItem(title = Some(newTitle), completed = None, order = None))
-      }
+      CreateTodoItem.apply[F](newTitle).map(t => UpdateTodoItem(title = Some(t.title), completed = None, order = None))
 
     def updateCompleted[F[_]: Monad](completed: Boolean): F[UpdateTodoItem] =
       Monad[F].pure(UpdateTodoItem(title = None, completed = Some(completed), order = None))

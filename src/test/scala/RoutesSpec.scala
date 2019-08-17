@@ -31,27 +31,27 @@ class RoutesSpec extends FlatSpec with Matchers with Inside {
 
   "API" should "get the todo by id" in runTest { service =>
     for {
-      todo <- service.createNewTodo("test")
-      request <- GET(_uri / todo.id.value)
+      todo     <- service.createNewTodo("test")
+      request  <- GET(_uri / todo.id.value)
       response <- api.app(service).run(request)
-      result <- response.as[TodoItem]
-      _      <- IO(result shouldBe todo)
+      result   <- response.as[TodoItem]
+      _        <- IO(result shouldBe todo)
     } yield ()
   }
 
   it should "fail to get by id if no todo" in runTest { service =>
     for {
-      request <- GET(_uri / "foo")
+      request  <- GET(_uri / "foo")
       response <- api.app(service).run(request)
-      _ <- IO { response.status shouldBe Status.NotFound }
+      _        <- IO { response.status shouldBe Status.NotFound }
     } yield ()
   }
 
   it should "fail to get by id if bad input" in runTest { service =>
     for {
-      request <- GET(_uri / "f_f")
+      request  <- GET(_uri / "f_f")
       response <- api.app(service).run(request)
-      _ <- IO { response.status shouldBe Status.BadRequest }
+      _        <- IO { response.status shouldBe Status.BadRequest }
     } yield ()
   }
 
@@ -87,6 +87,80 @@ class RoutesSpec extends FlatSpec with Matchers with Inside {
       request  <- PATCH(json"""{"order":1}""", _uri / "foo" / "order")
       response <- api.app(service).run(request)
       _        <- IO(response.status shouldBe Status.NotFound)
+    } yield ()
+  }
+
+  it should "fail updating order if bad request" in runTest { service =>
+    for {
+      request  <- PATCH(json"""{"order":-1}""", _uri / "foo" / "order")
+      response <- api.app(service).run(request)
+      _        <- IO(response.status shouldBe Status.BadRequest)
+    } yield ()
+  }
+
+  it should "update the todo title" in runTest { service =>
+    for {
+      todo     <- service.createNewTodo("foo")
+      request  <- PATCH(json"""{"title":"New title"}""", _uri / todo.id.value / "title")
+      response <- api.app(service).run(request)
+      result   <- response.as[TodoItem]
+      _        <- IO(result.item.title shouldBe "New title")
+    } yield ()
+  }
+
+  it should "fail updating title of non-existing todo" in runTest { service =>
+    for {
+      request  <- PATCH(json"""{"title":"new title"}""", _uri / "foo" / "title")
+      response <- api.app(service).run(request)
+      _        <- IO(response.status shouldBe Status.NotFound)
+    } yield ()
+  }
+
+  it should "fail updating title if bad request" in runTest { service =>
+    for {
+      request  <- PATCH(json"""{"title":"new%title"}""", _uri / "foo" / "title")
+      response <- api.app(service).run(request)
+      _        <- IO(response.status shouldBe Status.BadRequest)
+    } yield ()
+  }
+
+  it should "mark the todo as completed" in runTest { service =>
+    for {
+      todo     <- service.createNewTodo("foo")
+      request  <- PATCH(json"""{"completed":true}""", _uri / todo.id.value / "completed")
+      response <- api.app(service).run(request)
+      result   <- response.as[TodoItem]
+      _        <- IO(result.item.completed shouldBe true)
+    } yield ()
+  }
+
+  it should "fail completing todo of non-existing todo" in runTest { service =>
+    for {
+      request  <- PATCH(json"""{"completed":true}""", _uri / "foo" / "completed")
+      response <- api.app(service).run(request)
+      _        <- IO(response.status shouldBe Status.NotFound)
+    } yield ()
+  }
+
+  it should "delete a todo" in runTest { service =>
+    for {
+      todo      <- service.createNewTodo("foo")
+      request   <- DELETE(_uri / todo.id.value)
+      response  <- api.app(service).run(request)
+      _         <- IO(response.status shouldBe Status.Ok)
+      maybeTodo <- service.getTodoById(todo.id)
+      _         <- IO(maybeTodo shouldBe None)
+    } yield ()
+  }
+
+  it should "delete all todos" in runTest { service =>
+    for {
+      todo     <- service.createNewTodo("foo")
+      request  <- DELETE(_uri)
+      response <- api.app(service).run(request)
+      _        <- IO(response.status shouldBe Status.Ok)
+      allTodos <- service.getAllTodos()
+      _        <- IO(allTodos shouldBe empty)
     } yield ()
   }
 
