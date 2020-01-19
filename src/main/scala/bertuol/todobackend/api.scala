@@ -5,7 +5,8 @@ import cats.effect.ContextShift
 import cats.implicits._
 import io.circe.syntax._
 import io.circe.generic.auto._
-import org.http4s._
+import org.http4s.HttpApp
+import org.http4s.HttpRoutes
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.Router
