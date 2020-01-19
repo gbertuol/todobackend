@@ -3,3 +3,5 @@
 .vscode
 target
 project/target
+todobackend.code-workspace
+project/metals.sbt

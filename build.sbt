@@ -23,6 +23,7 @@ libraryDependencies ++= Seq(
     "io.circe"          %% "circe-generic"       % CirceVersion,
     "io.circe"          %% "circe-literal"       % CirceVersion,
     "io.chrisdavenport" %% "log4cats-slf4j"      % "1.0.1",
+    "com.monovore"      %% "decline-effect"      % "1.0.0",
     "org.apache.logging.log4j" % "log4j-api"        % "2.12.0",
     "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.12.0",
     "software.amazon.awssdk"   % "dynamodb"         % "2.5.64"
