@@ -25,10 +25,10 @@ class APIWebServer[F[_]](implicit eff: Effect[F], cs: ContextShift[F]) extends H
   implicit val updateTodoTitleFormDecoder     = jsonOf[F, UpdateTodoTitleForm]
   implicit val updateTodoCompletedFormDecoder = jsonOf[F, UpdateTodoCompletedForm]
 
-  def app(implicit service: Service[F]): HttpApp[F]       = CORS(routes.orNotFound)
-  def routes(implicit service: Service[F]): HttpRoutes[F] = rootRoutes
+  def app(implicit service: TodoService[F]): HttpApp[F]       = CORS(routes.orNotFound)
+  def routes(implicit service: TodoService[F]): HttpRoutes[F] = rootRoutes
 
-  private def rootRoutes(implicit service: Service[F]): HttpRoutes[F] =
+  private def rootRoutes(implicit service: TodoService[F]): HttpRoutes[F] =
     HttpRoutes.of[F] {
       case GET -> Root =>
         service.getAllTodos().attempt.flatMap {

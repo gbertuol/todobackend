@@ -5,7 +5,7 @@ import cats.effect.IO
 import cats.implicits._
 import bertuol.todobackend.APIWebServer
 import scala.concurrent.ExecutionContext
-import bertuol.todobackend.Service
+import bertuol.todobackend.TodoService
 import io.circe._
 import io.circe.literal._
 import io.circe.syntax._
@@ -164,7 +164,7 @@ class RoutesSpec extends FlatSpec with Matchers with Inside {
     } yield ()
   }
 
-  def runTest(t: Service[IO] => IO[Unit]): Unit = {
+  def runTest(t: TodoService[IO] => IO[Unit]): Unit = {
     val test = for {
       repo <- inMemoryRepo[IO]()
       service = createService(repo)
@@ -174,5 +174,5 @@ class RoutesSpec extends FlatSpec with Matchers with Inside {
     test.unsafeRunSync()
   }
 
-  def createService(implicit repo: TodoRepository[IO]): Service[IO] = new Service[IO]
+  def createService(implicit repo: TodoRepository[IO]): TodoService[IO] = TodoService.apply[IO]
 }

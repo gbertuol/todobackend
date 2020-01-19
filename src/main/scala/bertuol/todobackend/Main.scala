@@ -17,8 +17,8 @@ object Main extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
     for {
       logger <- Slf4jLogger.create[IO]
-      // repo     <- inMemoryRepo[IO]()
-      repo     <- createRepo(logger)
+      repo     <- inMemoryRepo[IO]()
+      // repo     <- createRepo(logger)
       exitCode <- runProgram(repo)
     } yield exitCode
   }
@@ -26,7 +26,7 @@ object Main extends IOApp {
   def createRepo(implicit logger: Logger[IO]): IO[TodoRepository[IO]] = bootstrapRepo[IO]()
 
   def runProgram(implicit repo: TodoRepository[IO]): IO[ExitCode] = {
-    implicit val service = new Service[IO]
+    implicit val service = TodoService.apply[IO]
     val httpApp          = APIWebServer[IO].app
     BlazeServerBuilder[IO]
       .bindHttp(8080, "localhost")
