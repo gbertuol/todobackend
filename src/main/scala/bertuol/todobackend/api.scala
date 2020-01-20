@@ -3,17 +3,15 @@ package bertuol.todobackend
 import cats.effect.Effect
 import cats.effect.ContextShift
 import cats.implicits._
-import io.circe.syntax._
 import io.circe.generic.auto._
 import org.http4s.HttpApp
 import org.http4s.HttpRoutes
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
-import org.http4s.server.Router
 import org.http4s.server.middleware.CORS
 import org.http4s.syntax.kleisli._
 
-class APIWebServer[F[_]](implicit eff: Effect[F], cs: ContextShift[F]) extends Http4sDsl[F] {
+class APIWebServer[F[_]](implicit eff: Effect[F]) extends Http4sDsl[F] {
   import domain._
   import APIWebServer._
 

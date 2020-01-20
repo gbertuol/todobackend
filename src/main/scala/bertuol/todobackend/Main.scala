@@ -8,23 +8,25 @@ import org.http4s.server.blaze.BlazeServerBuilder
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.chrisdavenport.log4cats.Logger
 
-object Main extends CommandIOApp(
-  name = "todobackend",
-  header = "backend application for a todo application",
-  version = "1.0.0"
-) {
+object Main
+    extends CommandIOApp(
+      name = "todobackend",
+      header = "backend application for a todo application",
+      version = "1.0.0"
+    ) {
   import repository._
 
   lazy val repoOpts = Opts.flag("in-memory", "use an in-memory repo").orFalse
 
   override def main: Opts[IO[ExitCode]] = {
-    repoOpts.map { case (useInMemoryRepo) => 
-      for {
-        logger   <- Slf4jLogger.create[IO]
-        repo     <- if (useInMemoryRepo) inMemoryRepo[IO]() <* logger.info("creating in-memory repo") 
-                    else createRepo(logger) <* logger.info("creating durable repo")
-        exitCode <- runProgram(repo)
-      } yield exitCode
+    repoOpts.map {
+      case (useInMemoryRepo) =>
+        for {
+          logger <- Slf4jLogger.create[IO]
+          repo <- if (useInMemoryRepo) inMemoryRepo[IO]() <* logger.info("creating in-memory repo")
+          else createRepo(logger) <* logger.info("creating durable repo")
+          exitCode <- runProgram(repo)
+        } yield exitCode
     }
   }
 

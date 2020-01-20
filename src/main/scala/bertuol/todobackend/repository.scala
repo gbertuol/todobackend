@@ -4,21 +4,17 @@ import java.{util => ju}
 import java.util.{concurrent => juc}
 
 import cats.Applicative
-import cats.FlatMap
 import cats.Monad
-import cats.MonadError
 import cats.effect.Async
-import cats.effect.IO
 import cats.effect.Sync
 import cats.effect.concurrent.Ref
 import software.amazon.awssdk.services.dynamodb.model._
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
-import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClientBuilder
 import software.amazon.awssdk.auth.credentials._
 import software.amazon.awssdk.regions.Region
 import io.chrisdavenport.log4cats.Logger
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object repository {
   import domain._
@@ -96,9 +92,9 @@ object repository {
         request = DescribeTableRequest.builder.tableName(tableName).build
         attemptResponse <- doRequest(request, ddbClient.describeTable(_: DescribeTableRequest)).attempt
         result <- attemptResponse match {
-          case Left(ex: ResourceNotFoundException) => Async[F].pure(false)
-          case Left(ex)                            => Logger[F].error(ex)("error") *> Async[F].raiseError(ex)
-          case Right(_)                            => Async[F].pure(true)
+          case Left(_: ResourceNotFoundException) => Async[F].pure(false)
+          case Left(ex)                           => Logger[F].error(ex)("error") *> Async[F].raiseError(ex)
+          case Right(_)                           => Async[F].pure(true)
         }
       } yield result
     }
@@ -166,10 +162,10 @@ object repository {
         request  <- toUpdateTodoRequest(id, action)
         response <- doRequest(request, ddbClient.updateItem(_: UpdateItemRequest)).attempt
         item <- response match {
-          case Left(ex: ConditionalCheckFailedException) => Async[F].pure(None)
-          case Left(ex)                                  => Logger[F].error(ex)(s"error updating $id") *> Async[F].raiseError(ex)
-          case Right(r) if r.attributes.isEmpty          => Async[F].pure(None)
-          case Right(r)                                  => toTodoItem(r.attributes).map(Some(_))
+          case Left(_: ConditionalCheckFailedException) => Async[F].pure(None)
+          case Left(ex)                                 => Logger[F].error(ex)(s"error updating $id") *> Async[F].raiseError(ex)
+          case Right(r) if r.attributes.isEmpty         => Async[F].pure(None)
+          case Right(r)                                 => toTodoItem(r.attributes).map(Some(_))
         }
       } yield item
     }
@@ -294,6 +290,7 @@ object repository {
           if (error == null) cb(Right(r))
           else cb(Left(error.getCause))
         }
+        ()
       }
 
   }

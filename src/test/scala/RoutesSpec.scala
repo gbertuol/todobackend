@@ -1,24 +1,21 @@
-import org.scalatest._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.Inside
 import bertuol.todobackend.repository._
 import bertuol.todobackend.domain._
 import cats.effect.IO
-import cats.implicits._
 import bertuol.todobackend.APIWebServer
 import scala.concurrent.ExecutionContext
 import bertuol.todobackend.TodoService
-import io.circe._
 import io.circe.literal._
-import io.circe.syntax._
 import io.circe.generic.semiauto._
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.io._
-import org.http4s.client._
 import org.http4s.client.dsl.io._
-import org.http4s.headers._
 import org.http4s.implicits._
 
-class RoutesSpec extends FlatSpec with Matchers with Inside {
+class RoutesSpec extends AnyFlatSpec with Matchers with Inside {
 
   implicit val cs              = IO.contextShift(ExecutionContext.global)
   implicit val idDecoder       = deriveDecoder[TodoID]
@@ -155,7 +152,7 @@ class RoutesSpec extends FlatSpec with Matchers with Inside {
 
   it should "delete all todos" in runTest { service =>
     for {
-      todo     <- service.createNewTodo("foo")
+      _        <- service.createNewTodo("foo")
       request  <- DELETE(_uri)
       response <- api.app(service).run(request)
       _        <- IO(response.status shouldBe Status.Ok)

@@ -8,14 +8,14 @@ import cats.implicits._
 trait TodoService[F[_]] {
 
   def createNewTodo(title: String): F[TodoItem]
-  def updateOrder(id: String, newOrder: Int): F[Option[TodoItem]] 
-  def updateTitle(id: String, newTitle: String): F[Option[TodoItem]] 
-  def updateCompleted(id: String, completed: Boolean): F[Option[TodoItem]] 
-  def getTodoById(id: TodoID): F[Option[TodoItem]] 
-  def getTodoById(id: String): F[Option[TodoItem]] 
-  def getAllTodos(): F[List[TodoItem]] 
-  def deleteTodo(id: String): F[Unit] 
-  def deleteAllTodos(): F[Unit] 
+  def updateOrder(id: String, newOrder: Int): F[Option[TodoItem]]
+  def updateTitle(id: String, newTitle: String): F[Option[TodoItem]]
+  def updateCompleted(id: String, completed: Boolean): F[Option[TodoItem]]
+  def getTodoById(id: TodoID): F[Option[TodoItem]]
+  def getTodoById(id: String): F[Option[TodoItem]]
+  def getAllTodos(): F[List[TodoItem]]
+  def deleteTodo(id: String): F[Unit]
+  def deleteAllTodos(): F[Unit]
 }
 
 object TodoService {

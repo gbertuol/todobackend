@@ -1,10 +1,12 @@
-import org.scalatest._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.Inside
 import bertuol.todobackend.repository._
 import bertuol.todobackend.domain._
 import cats.effect.IO
 import cats.implicits._
 
-class InMemoryRepoSpec extends FlatSpec with Matchers with Inside {
+class InMemoryRepoSpec extends AnyFlatSpec with Matchers with Inside {
 
   "The repository" should "get none if empty" in {
     val task = for {
